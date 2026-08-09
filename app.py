@@ -109,8 +109,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ========== File Paths ==========
-BASE_PATH = r"C:\Users\DELL\Desktop\Dashboard"
+# ========== File Paths (Dynamic - Cloud Ready) ==========
+BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 
 BILLED_FILE_XLSX = os.path.join(BASE_PATH, "billed_data.xlsx")
 BILLED_FILE_CSV = os.path.join(BASE_PATH, "billed_data.csv")
@@ -122,7 +122,6 @@ RDF_IDF_FILE_CSV = os.path.join(BASE_PATH, "rdf_idf.csv")
 
 SAME_LOCATION_FILE_XLSX = os.path.join(BASE_PATH, "same_location.xlsx")
 SAME_LOCATION_FILE_CSV = os.path.join(BASE_PATH, "same_location.csv")
-
 
 # ========== Utility Functions ==========
 def normalize_agent_id(series):
@@ -390,7 +389,15 @@ with st.spinner("📂 Loading data..."):
     df_same_location = load_same_location_file()
 
 if df_billed is None or df_billable is None:
-    st.error("❌ Files not found! Please place files in: `C:/Users/DELL/Desktop/Dashboard`")
+    st.error("❌ Files not found! Please ensure all required files are in the same folder as app.py")
+    st.info("""
+    ### Required Files:
+    - `billed_data.xlsx` or `billed_data.csv`
+    - `billable_data.xlsx` or `billable_data.csv`
+    - `rdf_idf.xlsx` or `rdf_idf.csv`
+    - `same_location.xlsx` or `same_location.csv`
+    - `requirements.txt`
+    """)
     st.stop()
 
 with st.spinner("🔄 Merging data..."):
@@ -892,7 +899,7 @@ def render_home():
 
 
 # ============================================================
-# ========== PAGE: MR ANALYSIS (FIXED) ==========
+# ========== PAGE: MR ANALYSIS ==========
 # ============================================================
 def render_mr_analysis():
     st.markdown(
@@ -963,7 +970,6 @@ def render_mr_analysis():
             else:
                 mr_full[col] = 0
         
-        # ✅ rdf_merge_df now includes Probe, OCR, Auto
         rdf_merge_df = pd.merge(
             rdf_idf_summary,
             mr_summary[['AGENT_ID', 'BILLED', 'MOB_MRI', 'OCR', 'AUTO', 'ZONE_NAME', 'CIRCLE_NAME', 'DIV_NAME']],
@@ -1119,7 +1125,7 @@ def render_mr_analysis():
             st.info("ℹ️ No data found for this category.")
         st.markdown("---")
 
-    # ---- 1. TOP 25 TOTAL BILLS (With Probe, OCR, Auto) ----
+    # ---- 1. TOP 25 TOTAL BILLS ----
     if show_top_bill_mr:
         top = mr_full.sort_values(['BILLED', 'AGENT_ID'], ascending=[False, True]).head(25).copy()
         top.columns = [
@@ -1131,7 +1137,7 @@ def render_mr_analysis():
         display_mr_table(top, "🏆 Top 25 MR by Total Bills",
                         ['Agent ID', 'Total Bills', 'Probe', 'OCR', 'Auto', 'Zone', 'Circle', 'Division'])
 
-    # ---- 2. TOP 25 TOTAL RDF (With Probe, OCR, Auto) ----
+    # ---- 2. TOP 25 TOTAL RDF ----
     if show_top_rdf_mr:
         if len(rdf_merge_df) > 0 and rdf_merge_df['RDF_COUNT'].sum() > 0:
             top = rdf_merge_df.sort_values(['RDF_COUNT', 'BILLED', 'AGENT_ID'], ascending=[False, False, True]).head(25).copy()
@@ -1143,7 +1149,7 @@ def render_mr_analysis():
             st.info("ℹ️ No RDF data found for agents.")
             st.markdown("---")
 
-    # ---- 3. TOP 25 TOTAL IDF (With Probe, OCR, Auto) ----
+    # ---- 3. TOP 25 TOTAL IDF ----
     if show_top_idf_mr:
         if len(rdf_merge_df) > 0 and rdf_merge_df['IDF_COUNT'].sum() > 0:
             top = rdf_merge_df.sort_values(['IDF_COUNT', 'BILLED', 'AGENT_ID'], ascending=[False, False, True]).head(25).copy()
@@ -1155,7 +1161,7 @@ def render_mr_analysis():
             st.info("ℹ️ No IDF data found for agents.")
             st.markdown("---")
 
-    # ---- 4. TOP 25 NEWLY RDF (With Probe, OCR, Auto) ----
+    # ---- 4. TOP 25 NEWLY RDF ----
     if show_top_newly_rdf_mr:
         if len(rdf_merge_df) > 0 and rdf_merge_df['NEWLY_RDF_COUNT'].sum() > 0:
             top = rdf_merge_df.sort_values(['NEWLY_RDF_COUNT', 'BILLED', 'AGENT_ID'], ascending=[False, False, True]).head(25).copy()
@@ -1167,7 +1173,7 @@ def render_mr_analysis():
             st.info("ℹ️ No Newly RDF data found for agents.")
             st.markdown("---")
 
-    # ---- 5. TOP 25 PROBE ZERO (With Probe, OCR, Auto) ----
+    # ---- 5. TOP 25 PROBE ZERO ----
     if show_probe_zero_top:
         top = mr_full[mr_full['MOB_MRI'] == 0].sort_values(['BILLED', 'AGENT_ID'], ascending=[False, True]).head(25).copy()
         top.columns = [
@@ -1179,7 +1185,7 @@ def render_mr_analysis():
         display_mr_table(top, "📱❌ Top 25 Probe Zero MR",
                         ['Agent ID', 'Total Bills', 'Probe', 'OCR', 'Auto', 'Zone', 'Circle', 'Division'])
 
-    # ---- 6. TOP 25 AUTO ZERO (With Probe, OCR, Auto) ----
+    # ---- 6. TOP 25 AUTO ZERO ----
     if show_auto_zero_top:
         top = mr_full[mr_full['AUTO'] == 0].sort_values(['BILLED', 'AGENT_ID'], ascending=[False, True]).head(25).copy()
         top.columns = [
@@ -1191,7 +1197,7 @@ def render_mr_analysis():
         display_mr_table(top, "🤖❌ Top 25 Auto Zero MR",
                         ['Agent ID', 'Total Bills', 'Probe', 'OCR', 'Auto', 'Zone', 'Circle', 'Division'])
 
-    # ---- 7. TOP 25 SAME LOCATION (With Probe, OCR, Auto) ----
+    # ---- 7. TOP 25 SAME LOCATION ----
     if show_same_location_top:
         if len(same_location_mr) > 0:
             same_loc_top = same_location_mr.copy()
